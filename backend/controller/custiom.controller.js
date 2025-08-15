@@ -1,12 +1,19 @@
 // services/telegramService.js
 const axios = require('axios');
+import dotenv from 'dotenv';
 
-const TELEGRAM_API_TOKEN = '7786553835:AAHn3PPyLoyBUOTckFvykwHSDAJn7lf04k0';
+
+dotenv.config();
+const telegram = process.env.TELEGRAM_API_TOKEN;
+if (!telegram) {
+    throw new Error("Could not find TELEGRAM_API_TOKEN in environment");
+}
+
 const CHAT_ID = '667605413';
 
 const sendMessageToTelegram = async (message) => {
     try {
-        const response = await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
+        const response = await axios.post(`https://api.telegram.org/bot${telegram}/sendMessage`, {
             chat_id: CHAT_ID,
             text: message,
         });
@@ -22,7 +29,7 @@ const sendImagesToTelegram = async (images) => {
             type: 'photo',
             media: imgUrl,
         }));
-        const response = await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMediaGroup`, {
+        const response = await axios.post(`https://api.telegram.org/bot${telegram}/sendMediaGroup`, {
             chat_id: CHAT_ID,
             media: mediaGroup,
         });
