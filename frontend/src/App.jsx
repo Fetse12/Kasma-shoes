@@ -12,7 +12,7 @@ import Page2 from './pages/GetShoe/page2';
 import Page3 from './pages/GetShoe/page3';
 import Page4 from './pages/GetShoe/page4';
 import Succsuss from './pages/succsuss';
-import CheckOut from './pages/CheckOut';
+import CheckOut from './pages/checkout';
 import Customize from './pages/Customize';
 import Customized_Order from './pages/Customized_Order';
 import TypeShoe from './pages/TypeShoe';
@@ -38,11 +38,6 @@ export default function App() {
         <Route path="/success" element={<Succsuss />} />
         <Route path="/customized_sucssus" element={<Customized_Order />} />
         <Route path="/shoeType" element={<TypeShoe />} />
-
-
-
-
-
       </Routes>
     </BrowserRouter>
   );

@@ -11,7 +11,6 @@ export default function Shoe() {
     const [shoe, setShoe] = useState([]);
     const navigate = useNavigate();
 
-    // Merge food and habesha items only when they change
     useEffect(() => {
         setShoe(shoes);
     }, [shoes]);
