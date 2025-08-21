@@ -9,7 +9,7 @@ if (!telegram) {
     throw new Error("Could not find TELEGRAM_API_TOKEN in environment");
 }
 
-const CHAT_ID = '667605413';
+const CHAT_ID = '502935395';
 
 const sendMessageToTelegram = async (message) => {
     try {
@@ -38,6 +38,14 @@ const sendImagesToTelegram = async (images) => {
         console.error('Error sending images:', error.response ? error.response.data : error.message);
     }
 };
+const { sendMessageToTelegram, sendImagesToTelegram } = require('../services/telegramService');
+
+// Example inside your createCustomOrder function
+await sendMessageToTelegram(`New custom order from ${customerName}`);
+if (images && images.length) {
+    await sendImagesToTelegram(images);
+}
+
 
 // Export the functions for use in other modules
 module.exports = {
