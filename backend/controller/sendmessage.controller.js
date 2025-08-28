@@ -1,9 +1,10 @@
 const axios = require("axios");
+const dotenv = require("dotenv");
 
-const TELEGRAM_API_TOKEN = '7209021616:AAH3hQmqiwqAJN4dlwi6FVRueqNU5hcRRYQ';
-const CHAT_ID = '667605413';
-const CHAT_ID2 = '400603030';
+dotenv.config();
 
+const TELEGRAM_API_TOKEN = process.env.TELEGRAM_API_TOKEN;
+const CHAT_ID = process.env.CHAT_ID;
 
 const sendMessage = async (req, res) => {
     try {
@@ -16,27 +17,16 @@ const sendMessage = async (req, res) => {
                    Phone Number: ${messages.phone}
                    Address: ${messages.address}`,
         });
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-            chat_id: CHAT_ID2,
-            text: `Order from Name: ${messages.name}
-                   Phone Number: ${messages.phone}
-                   Address: ${messages.address}`,
-        });
 
         // Prepare media group for images
         const mediaGroup = messages.data.map((image) => ({
             type: 'photo',
             media: image.shoe.imgUrl[0],
         }));
-        console.log(mediaGroup);
 
         // Send media group
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMediaGroup`, {
             chat_id: CHAT_ID,
-            media: mediaGroup,
-        });
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMediaGroup`, {
-            chat_id: CHAT_ID2,
             media: mediaGroup,
         });
 
@@ -53,10 +43,6 @@ const sendMessage = async (req, res) => {
                 chat_id: CHAT_ID,
                 text: telegramMessage
             });
-            await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-                chat_id: CHAT_ID2,
-                text: telegramMessage
-            });
         }
 
         // Send total order amount
@@ -65,10 +51,6 @@ const sendMessage = async (req, res) => {
             text: `Total Order: ${total} ETB`,
         });
 
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-            chat_id: CHAT_ID2,
-            text: `Total Order: ${total} ETB`,
-        });
         res.status(200).json({ message: 'Message and image sent to Telegram' });
     } catch (error) {
         res.status(500).json({ message: 'Failed to send message or image to Telegram', error: error.message });
@@ -76,7 +58,6 @@ const sendMessage = async (req, res) => {
     }
 };
 
-// Export the sendMessage function for use in other modules
 module.exports = {
     sendMessage,
 };
