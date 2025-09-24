@@ -1,198 +1,452 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { FaBars, FaShoePrints, FaShoppingCart, FaTimes, FaUtensils } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
 
-import girl from '../assets/girl.jpeg'
-import boy from '../assets/boy.jpeg'
-import men from '../assets/men.jpeg'
-import women from '../assets/women.jpeg'
-import logo from '../assets/kasma.jpg'
-
-
-import useStore from '../zustand/store';
-import fetchShoes from '../hook/fetchShoes';
-import Navigation from '../component/navigation';
-import SearchBar from '../component/serachBar';
-import SpecialFood from '../component/SpecilFood';
-import ShoeCard from '../component/ShoeCard';
-import SideBar from '../component/SideBar';
-// import GetUsersLocation from '../hook/GetUsersLocation';
-// import TelegramWebApp from '../hook/getTelegramUser';
+import useStore from "../zustand/store";
+import fetchShoes from "../hook/fetchShoes";
+import Hero from "../component/Hero";
+import StickyNavbar from "../component/StickyNavbar";
+import LuxuryProductGrid from "../component/LuxuryProductGrid";
+import LuxuryFooter from "../component/LuxuryFooter";
 
 export default function Home() {
-    const navigate = useNavigate();
-    const containerRef = useRef(null);
-    const sidebarRef = useRef(null);
-    const [isPaused, setIsPaused] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const { shoes } = useStore();
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [newArrivals, setNewArrivals] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    const { shoes, cart, userLocation } = useStore();
-    const [special, setSpecial] = useState([]);
+  // Search functionality
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-    // hooks
-    fetchShoes()
+  // hooks
+  fetchShoes();
 
+  // Search functionality
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-    useEffect(() => {
-        const filteredshoe = shoes.filter((item) => item.isSpecial);
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `/api/search?query=${encodeURIComponent(query)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-        setSpecial(filteredshoe);
-    }, [shoes]);
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    handleSearch(value);
+  };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search/${searchTerm}`);
+      setIsSearchOpen(false);
+      setSearchTerm("");
+      setSearchResults([]);
+    }
+  };
 
-    useEffect(() => {
-        const container = containerRef.current;
-        let scrollInterval;
+  // Remove handleSearchClick as it's no longer needed
 
-        if (container && !isPaused) {
-            let index = 0;
-            scrollInterval = setInterval(() => {
-                const scrollAmount = container.scrollWidth / special.length;
-                container.scrollTo({
-                    left: index * scrollAmount,
-                    behavior: 'smooth',
-                });
+  const handleResultClick = (shoe) => {
+    navigate(`/viewshoe/${shoe._id}`);
+    setIsSearchOpen(false);
+    setSearchTerm("");
+    setSearchResults([]);
+  };
 
-                index = (index + 1) % special.length;
-            }, 2000); // Change scroll every 2 seconds
-        }
-
-        return () => clearInterval(scrollInterval);
-    }, [special, isPaused]);
-
-    const handleMouseDown = () => setIsPaused(true);
-    const handleMouseUp = () => setIsPaused(false);
-    const handleTouchStart = () => setIsPaused(true);
-    const handleTouchEnd = () => setIsPaused(false);
-    const handleRouting = (categoryType) => {
-        navigate(`/shoeCatagory/${categoryType}`);
-    };
-
+  // Close search overlay when clicking outside
+  useEffect(() => {
     const handleClickOutside = (event) => {
-        if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
-            setMenuOpen(false);
-        }
+      if (
+        isSearchOpen &&
+        !event.target.closest(".home-search-overlay") &&
+        !event.target.closest("#home-search-input")
+      ) {
+        setIsSearchOpen(false);
+      }
     };
 
-    useEffect(() => {
-        if (menuOpen) {
-            document.addEventListener('click', handleClickOutside);
-        } else {
-            document.removeEventListener('click', handleClickOutside);
-        }
+    if (isSearchOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isSearchOpen]);
 
-        return () => {
-            document.removeEventListener('click', handleClickOutside);  // Cleanup
-        };
-    }, [menuOpen]);
+  useEffect(() => {
+    // Check if shoes is an array before filtering
+    if (Array.isArray(shoes)) {
+      setIsLoading(false);
 
+      if (shoes.length > 0) {
+        // Filter featured products (special offers)
+        const featured = shoes.filter((item) => item.isSpecial);
+        setFeaturedProducts(featured);
 
+        // Filter new arrivals (recently added)
+        const newProducts = shoes.slice(0, 8);
+        setNewArrivals(newProducts);
+      } else {
+        // Set empty arrays if no shoes available
+        setFeaturedProducts([]);
+        setNewArrivals([]);
+      }
+    }
+  }, [shoes]);
 
+  return (
+    <div className="min-h-screen bg-dark-900">
+      {/* Sticky Navigation */}
+      <StickyNavbar />
 
-    return (
-        <div className='flex bg-white flex-col justify-between pb-20 min-h-screen'>
-            {menuOpen && <SideBar setMenuOpen={setMenuOpen} />}
+      {/* Hero Section */}
+      <Hero />
 
-            <div className=''>
-                <div className='flex justify-between px-5 items-center'>
-                    <div className='text-2xl flex items-center gap-3   mb-4 mt-5'>
-                        {menuOpen ? <FaTimes onClick={() => setMenuOpen(false)} className='text-xl  z-50 text-red-600' /> : <FaBars onClick={() => setMenuOpen(true)} className='text-xl text-black' />}
+      {/* Search Section */}
+      <section className="py-16 px-6 bg-dark-800/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Find Your Perfect Pair
+            </h2>
+            <p className="text-dark-300 text-lg">
+              Discover our curated collection of premium footwear
+            </p>
+          </div>
+          <div
+            className="animate-fade-in-up relative"
+            style={{ animationDelay: "0.2s" }}
+          >
+            {/* Search Input */}
+            <div className="relative w-full max-w-md mx-auto">
+              <div className="relative glass rounded-2xl overflow-hidden transition-all duration-300 shadow-neon-lg border-neon-blue/50">
+                <div className="flex items-center">
+                  <div className="pl-4 pr-2">
+                    <FontAwesomeIcon
+                      icon={faSearch}
+                      className="text-lg text-neon-blue"
+                    />
+                  </div>
 
-                    </div>
-                    <div className='font-bold text-purple-600 text-2xl gap-2 flex items-center'>
-                        <img src={logo} className='w-7 h-8' alt="" />  ሱቅ
-                    </div>
+                  <input
+                    id="home-search-input"
+                    type="text"
+                    placeholder="Search for shoes..."
+                    value={searchTerm}
+                    onChange={handleSearchInputChange}
+                    onFocus={() => setIsSearchOpen(true)}
+                    className="flex-grow px-3 py-4 bg-transparent text-dark-100 placeholder-dark-400 focus:outline-none text-lg"
+                  />
 
-                    <Link to={'/cart'} className="p-3 relative rounded-xl shadow-lg">
-                        <FaShoppingCart className='text-xl' />
-                        {cart.length === 0 ? '' : (
-                            <div className='absolute top-2 right-1 text-[9px] text-center w-4 h-4 p-1 flex items-center justify-center rounded-full text-white bg-red-600'>
-                                {cart.length}
-                            </div>
-                        )}
-
-                    </Link>
-                </div>
-
-                <div className='px-5'>
-                    <SearchBar />
-
-                </div>
-
-                <div
-                    ref={containerRef}
-                    className="w-full py-1 pl-5 flex gap-3 overflow-x-scroll scrollbar-hide snap-x snap-mandatory"
-                    onMouseEnter={() => setIsPaused(true)} // Pause when hovering
-                    onMouseLeave={() => setIsPaused(false)} // Resume when not hovering
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
-                >
-                    {special.map((item) => (
-                        <div
-                            key={item._id}
-                            className="snap-center w-full"
-                        >
-                            <SpecialFood data={item} />
-                        </div>
-                    ))}
-                </div>
-
-                <div>
-                    <div
-
-                        className="w-full py-1 px-2 grid grid-cols-2 gap-3 "
+                  {searchTerm && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm("");
+                        setSearchResults([]);
+                      }}
+                      className="px-3 py-2 text-dark-400 hover:text-neon-pink transition-colors duration-300"
                     >
-                        {special.map((item) => (
-                            <div
-                                key={item._id}
-                                className="w-full " // Add margin for gap
-                            >
-                                <ShoeCard data={item} />
-                            </div>
-                        ))}
-                    </div>
+                      <FontAwesomeIcon icon={faTimes} className="text-sm" />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleSearchSubmit}
+                    className="btn-neon px-6 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-white font-semibold transition-all duration-300 hover:shadow-neon-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!searchTerm.trim()}
+                  >
+                    <FontAwesomeIcon icon={faSearch} className="text-lg" />
+                  </button>
                 </div>
-                {/* <div>
-                    <div className='flex gap-2 items-center ml-5 mt-3 text-xl font-semibold'>
-                        Choose Your shoes <FaShoePrints />
-                    </div>
 
-                    <div className='grid justify-center gap-2 p-4 px-9 pt-2 grid-cols-2'>
-                        <div onClick={() => handleRouting('men')} className='relative shadow-lg rounded-xl shadow-purple-400'>
-                            <div className='absolute top-2 z-10 text-xl font-semibold bg-purple-600 text-white px-4 py-1 bg-opacity-65 rounded-xl left-2'>Men</div>
-                            <img className='w-full rounded-xl h-[125px] object-cover blur-[1px]' src={men} alt="" />
-                        </div>
-                        <div
-                            // onClick={() => handleRouting('women')}
-                            className='relative shadow-lg rounded-xl  shadow-purple-400'>
-                            <div className='absolute top-2 z-10 text-xl font-semibold bg-purple-900 text-white px-4 py-1 bg-opacity-65 rounded-xl right-2'>Women</div>
-                            <div className='absolute top-12 z-10 text-xl w-fit font-semibold bg-black text-white px-4 py-1 bg-opacity-65 rounded-xl left-6 right-2'>Coming Soon </div>
-
-                            <img className='w-full rounded-xl h-[125px] object-cover blur-[3px]' src={women} alt="" />
-                        </div>
-                        <div
-                            // onClick={() => handleRouting('boy')} 
-                            className='relative shadow-lg rounded-xl shadow-purple-400'>
-                            <div className='absolute bottom-2 z-10 text-xl font-semibold bg-purple-900 text-white px-4 py-1 bg-opacity-65 rounded-xl left-2'>Boy</div>
-                            <div className='absolute top-2 z-10 text-xl w-fit font-semibold bg-black text-white px-4 py-1 bg-opacity-65 rounded-xl left-2 right-6'>Coming Soon </div>
-
-                            <img className='w-full rounded-xl h-[125px] object-cover blur-[3px]' src={boy} alt="" />
-                        </div>
-                        <div
-                            // onClick={() => handleRouting('girl')} 
-                            className='relative shadow-lg rounded-xl shadow-purple-400'>
-                            <div className='absolute bottom-2 z-10 text-xl font-semibold bg-purple-900 text-white px-4 py-1 bg-opacity-65 rounded-xl right-2'>Girl</div>
-                            <div className='absolute top-2 z-10 text-xl w-fit font-semibold bg-black text-white px-4 py-1 bg-opacity-65 rounded-xl left-6 right-2'>Coming Soon </div>
-
-                            <img className='w-full rounded-xl h-[125px] object-cover blur-[3px]' src={girl} alt="" />
-                        </div>
-                    </div>
-                </div> */}
-
+                {/* Focus indicator */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-neon-blue to-neon-purple opacity-100"></div>
+              </div>
             </div>
-            <Navigation />
+
+            {/* Search Overlay */}
+            {isSearchOpen && (
+              <div className="home-search-overlay absolute top-full left-0 right-0 mt-4 glass rounded-2xl border border-gold-500/20 z-50">
+                <div className="p-6">
+                  {/* Loading indicator in overlay */}
+                  {isSearching && (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gold-500"></div>
+                      <span className="ml-3 text-dark-300">Searching...</span>
+                    </div>
+                  )}
+
+                  {/* Search Results */}
+                  {searchTerm && !isSearching && (
+                    <div className="mt-4 max-h-96 overflow-y-auto">
+                      {searchResults.length > 0 ? (
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-semibold text-white mb-3">
+                            Search Results ({searchResults.length})
+                          </h3>
+                          {searchResults.slice(0, 5).map((shoe) => (
+                            <div
+                              key={shoe._id}
+                              onClick={() => handleResultClick(shoe)}
+                              className="flex items-center space-x-3 p-3 rounded-xl glass hover:bg-gold-500/10 cursor-pointer transition-all duration-300 group"
+                            >
+                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-dark-700 flex-shrink-0">
+                                {shoe.imgUrl && shoe.imgUrl[0] ? (
+                                  <img
+                                    src={shoe.imgUrl[0]}
+                                    alt={shoe.shoes_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-dark-400">
+                                    <FontAwesomeIcon
+                                      icon={faSearch}
+                                      className="text-lg"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="text-white font-medium group-hover:text-gold-400 transition-colors duration-300 truncate">
+                                  {shoe.shoes_name}
+                                </h4>
+                                <div className="space-y-1">
+                                  <p className="text-dark-300 text-sm">
+                                    {shoe.shoes_type} •{" "}
+                                    {shoe.type?.replace("_", " ")} • Size{" "}
+                                    {shoe.shoe_Size}
+                                  </p>
+                                  <div className="flex items-center space-x-2">
+                                    {shoe.DiscountPercent > 0 ? (
+                                      <>
+                                        <span className="text-gold-500 font-semibold">
+                                          $
+                                          {Math.round(
+                                            shoe.Price *
+                                              (1 - shoe.DiscountPercent / 100)
+                                          )}
+                                        </span>
+                                        <span className="text-dark-400 line-through text-sm">
+                                          ${shoe.Price}
+                                        </span>
+                                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                          -{shoe.DiscountPercent}%
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="text-gold-500 font-semibold">
+                                        ${shoe.Price}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {shoe.isSpecial && (
+                                      <span className="bg-gold-500 text-dark-900 text-xs px-2 py-1 rounded-full font-medium">
+                                        Special
+                                      </span>
+                                    )}
+                                    {!shoe.isAvailable && (
+                                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                                        Out of Stock
+                                      </span>
+                                    )}
+                                    {shoe.isAvailable && (
+                                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                                        In Stock
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          {searchResults.length > 5 && (
+                            <button
+                              onClick={handleSearchSubmit}
+                              className="w-full mt-3 py-2 text-gold-500 hover:text-gold-400 font-medium transition-colors duration-300"
+                            >
+                              View all {searchResults.length} results
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-dark-300">
+                            No shoes found for &quot;{searchTerm}&quot;
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Popular Searches */}
+                  {!searchTerm && !isSearching && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold text-white mb-3">
+                        Popular Searches
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          "Sneakers",
+                          "Boots",
+                          "Formal",
+                          "Athletic",
+                          "Heels",
+                          "Loafers",
+                        ].map((term) => (
+                          <button
+                            key={term}
+                            onClick={() => {
+                              setSearchTerm(term);
+                              handleSearch(term);
+                            }}
+                            className="px-4 py-2 bg-dark-800 hover:bg-gold-500/20 text-dark-200 hover:text-gold-400 rounded-lg transition-all duration-300"
+                          >
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-    );
+      </section>
+
+      {/* Featured Products */}
+      {isLoading ? (
+        <section className="py-16 px-6">
+          <div className="max-w-7xl mx-auto text-center">
+            <div className="animate-pulse">
+              <div className="h-12 bg-dark-800 rounded mb-8 max-w-md mx-auto"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-dark-800 rounded-2xl h-80"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+          {featuredProducts.length > 0 && (
+            <LuxuryProductGrid
+              products={featuredProducts}
+              title="Featured Collection"
+              columns={4}
+            />
+          )}
+
+          {/* New Arrivals */}
+          {newArrivals.length > 0 && (
+            <section className="py-16 px-6 bg-dark-800/30">
+              <LuxuryProductGrid
+                products={newArrivals}
+                title="New Arrivals"
+                columns={4}
+              />
+            </section>
+          )}
+        </>
+      )}
+
+      {/* Brand Story Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="animate-fade-in-left">
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+                Crafted for
+                <span className="block gradient-text">Excellence</span>
+              </h2>
+              <p className="text-dark-300 text-lg leading-relaxed mb-8">
+                At Kasma, we believe that great shoes are more than just
+                footwear – they&apos;re a statement of style, comfort, and
+                quality. Our carefully curated collection features premium
+                materials and timeless designs that elevate your everyday look.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button className="btn-luxury px-8 py-4 rounded-full text-white font-semibold text-lg">
+                  Our Story
+                </button>
+                <button className="px-8 py-4 rounded-full border-2 border-gold-500 text-gold-500 font-semibold text-lg hover:bg-gold-500 hover:text-dark-900 transition-all duration-300">
+                  Learn More
+                </button>
+              </div>
+            </div>
+
+            <div className="animate-fade-in-right">
+              <div className="relative">
+                <div className="aspect-square rounded-2xl overflow-hidden glass">
+                  <img
+                    src="/api/placeholder/600/600"
+                    alt="Luxury shoes showcase"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-gold-500 rounded-full flex items-center justify-center animate-pulse">
+                  <span className="text-dark-900 font-bold text-2xl">★</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter CTA Section */}
+      <section className="py-20 px-6 bg-gradient-to-r from-gold-500/10 to-red-500/10">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-6 animate-fade-in-up">
+            Stay in Style
+          </h2>
+          <p
+            className="text-dark-300 text-xl mb-8 animate-fade-in-up"
+            style={{ animationDelay: "0.2s" }}
+          >
+            Get exclusive access to new collections, special offers, and style
+            tips.
+          </p>
+          <div
+            className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto animate-fade-in-up"
+            style={{ animationDelay: "0.4s" }}
+          >
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-6 py-4 bg-dark-800 border border-gold-500/30 rounded-full text-white placeholder-dark-400 focus:outline-none focus:border-gold-500 transition-colors duration-300"
+            />
+            <button className="btn-luxury px-8 py-4 rounded-full text-white font-semibold text-lg">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <LuxuryFooter />
+    </div>
+  );
 }

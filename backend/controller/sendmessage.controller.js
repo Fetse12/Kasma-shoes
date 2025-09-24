@@ -7,57 +7,100 @@ const TELEGRAM_API_TOKEN = process.env.TELEGRAM_API_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 
 const sendMessage = async (req, res) => {
-    try {
-        const messages = req.body;
+  try {
+    const messages = req.body;
 
-        // Send the initial message
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-            chat_id: CHAT_ID,
-            text: `Order from Name: ${messages.name}
-                   Phone Number: ${messages.phone}
-                   Address: ${messages.address}`,
-        });
+    // Send the initial message with payment information
+    let initialMessage = `🛍️ **NEW ORDER RECEIVED** 🛍️
+        
+👤 **Customer Information:**
+Name: ${messages.name}
+Phone: ${messages.phone}
+Address: ${messages.address}
 
-        // Prepare media group for images
-        const mediaGroup = messages.data.map((image) => ({
-            type: 'photo',
-            media: image.shoe.imgUrl[0],
-        }));
+💰 **Payment Information:**
+Payment Method: ${messages.paymentMethod?.toUpperCase() || "Not specified"}
+Reference ID: ${messages.referenceId || "Not provided"}
+Amount Paid: ${messages.receivedAmount || "Not provided"} ETB
+Account: ${messages.receiverAccountNumber || "Not provided"}`;
 
-        // Send media group
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMediaGroup`, {
-            chat_id: CHAT_ID,
-            media: mediaGroup,
-        });
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`,
+      {
+        chat_id: CHAT_ID,
+        text: initialMessage,
+        parse_mode: "Markdown",
+      }
+    );
 
-        // Calculate total and send individual shoe messages
-        let total = 0;
-        for (let i = 0; i < messages.data.length; i++) {
-            total += (parseInt(messages.data[i].quantity) * parseInt(messages.data[i].shoe.Price));
-            let telegramMessage = `
-                - Shoe name: ${messages.data[i].shoe.name}
-                - ${messages.data[i].quantity} X ${messages.data[i].shoe.Price} = ${parseInt(messages.data[i].quantity) * parseInt(messages.data[i].shoe.Price)} ETB
-            `;
+    // Prepare media group for images
+    const mediaGroup = messages.data.map((image) => ({
+      type: "photo",
+      media: image.shoe.imgUrl[0],
+    }));
 
-            await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-                chat_id: CHAT_ID,
-                text: telegramMessage
-            });
-        }
+    // Send media group
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMediaGroup`,
+      {
+        chat_id: CHAT_ID,
+        media: mediaGroup,
+      }
+    );
 
-        // Send total order amount
-        await axios.post(`https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`, {
-            chat_id: CHAT_ID,
-            text: `Total Order: ${total} ETB`,
-        });
+    // Calculate total and send individual shoe messages
+    let total = 0;
+    let orderDetails = `📦 **ORDER DETAILS:**\n\n`;
 
-        res.status(200).json({ message: 'Message and image sent to Telegram' });
-    } catch (error) {
-        res.status(500).json({ message: 'Failed to send message or image to Telegram', error: error.message });
-        console.log(error.message);
+    for (let i = 0; i < messages.data.length; i++) {
+      const itemTotal =
+        parseInt(messages.data[i].quantity) *
+        parseInt(messages.data[i].shoe.Price);
+      total += itemTotal;
+
+      orderDetails += `👟 **${messages.data[i].shoe.shoes_name}**
+Size: ${messages.data[i].selectedSize || "Not specified"}
+Quantity: ${messages.data[i].quantity}
+Price: ${messages.data[i].shoe.Price} ETB
+Subtotal: ${itemTotal} ETB
+
+`;
     }
+
+    // Send order details
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`,
+      {
+        chat_id: CHAT_ID,
+        text: orderDetails,
+        parse_mode: "Markdown",
+      }
+    );
+
+    // Send total order amount
+    await axios.post(
+      `https://api.telegram.org/bot${TELEGRAM_API_TOKEN}/sendMessage`,
+      {
+        chat_id: CHAT_ID,
+        text: `💳 **TOTAL ORDER AMOUNT: ${total} ETB**`,
+        parse_mode: "Markdown",
+      }
+    );
+
+    res
+      .status(200)
+      .json({ message: "Order details sent to Telegram successfully" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({
+        message: "Failed to send order details to Telegram",
+        error: error.message,
+      });
+    console.log(error.message);
+  }
 };
 
 module.exports = {
-    sendMessage,
+  sendMessage,
 };

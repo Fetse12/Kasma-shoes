@@ -1,8 +1,208 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-.text-stroke {
-    -webkit-text-stroke: .4px black;
-    /* Adjust color and thickness */
+/* Chekich-inspired dark theme base styles */
+html {
+  @apply bg-dark-900 text-dark-100;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-dark-900 text-dark-100 font-sans;
+  background: linear-gradient(135deg, #0f0f0f 0%, #262626 50%, #404040 100%);
+  min-height: 100vh;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gold-500 rounded-full;
+  box-shadow: 0 0 10px rgba(200, 163, 86, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gold-400;
+  box-shadow: 0 0 15px rgba(200, 163, 86, 0.5);
+}
+
+/* Luxury text effects */
+.text-luxury {
+  -webkit-text-stroke: 0.5px #c8a356;
+  text-shadow: 0 0 10px rgba(200, 163, 86, 0.3);
+}
+
+/* Luxury glow effects */
+.luxury-glow {
+  box-shadow: 0 0 20px rgba(200, 163, 86, 0.2);
+}
+
+.luxury-glow:hover {
+  box-shadow: 0 0 30px rgba(200, 163, 86, 0.4);
+}
+
+/* Glass morphism effect for luxury theme */
+.glass {
+  background: rgba(38, 38, 38, 0.3);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(200, 163, 86, 0.1);
+}
+
+/* Luxury gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #c8a356 0%, #b33a3a 50%, #f5f5f5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hero section styles */
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 15, 15, 0.7) 0%,
+    rgba(38, 38, 38, 0.5) 100%
+  );
+  z-index: 2;
+}
+
+/* Luxury card hover effects */
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(200, 163, 86, 0.2);
+}
+
+/* Luxury button animations */
+.btn-luxury {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #c8a356 0%, #b33a3a 100%);
+  border: 1px solid rgba(200, 163, 86, 0.3);
+}
+
+.btn-luxury::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.6s;
+}
+
+.btn-luxury:hover::before {
+  left: 100%;
+}
+
+.btn-luxury:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(200, 163, 86, 0.3);
+}
+
+/* Product grid hover effects */
+.product-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 20px rgba(200, 163, 86, 0.1);
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-image {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Quick view overlay */
+.quick-view-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 15, 15, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.product-card:hover .quick-view-overlay {
+  opacity: 1;
+}
+
+/* Loading animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #404040 25%, #525252 50%, #404040 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Sticky navbar styles */
+.navbar-sticky {
+  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+}
+
+.navbar-transparent {
+  background: rgba(15, 15, 15, 0.1);
+  border-bottom: 1px solid rgba(200, 163, 86, 0.1);
+}
+
+.navbar-solid {
+  background: rgba(15, 15, 15, 0.95);
+  border-bottom: 1px solid rgba(200, 163, 86, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
